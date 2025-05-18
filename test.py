@@ -1,14 +1,20 @@
 import tkinter as tk
 
 def show_frame(frame):
+    global after_id
+    if after_id:
+        root.after_cancel(after_id)
+        after_id = None
     frame.tkraise()
 
 
 def show_temp_frame(temp_frame, return_frame, delay_ms):
+    global after_id
     show_frame(temp_frame)
-    root.after(delay_ms, lambda: show_frame(return_frame))
+    after_id = root.after(delay_ms, lambda: show_frame(return_frame))
 
 root = tk.Tk()
+after_id = None
 
 x = 1400
 y = 700
