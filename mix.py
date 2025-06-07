@@ -1,0 +1,489 @@
+from Enemy import Enemy
+import enteties as enteties
+from pathlib import Path
+import pyglet as pyglet
+import tkinter as tk
+import pygame as pygame
+
+class PpyMareGame:
+    def __init__(self, root):
+        pygame.mixer.init()
+        pygame.mixer.set_num_channels(2)
+        self.chan_bg = pygame.mixer.Channel(0)
+        self.chan_type = pygame.mixer.Channel(1)
+
+        self.sound_bg = pygame.mixer.Sound('sounds/C418 - Wet Hands - Minecraft Volume Alpha.mp3')
+        self.sound_type = pygame.mixer.Sound('sounds/typing-sound-effect.mp3')  # podaj ścieżkę do muzyki
+
+        self.frames = None
+        self.root = root
+        self.root.geometry("1400x700")
+        self.root.title("PpyMare")
+        self.after_id = None
+        #dodaje fote
+        self.img_skip = tk.PhotoImage(file='images/skip2.png')
+
+        self.chan_bg.play(self.sound_bg, loops=-1)
+        self.chan_bg.set_volume(0.3)
+
+        #assety zosi
+        pyglet.options['win32_gdi_font'] = True
+        self.fontpath = Path(__file__).parent / 'assets/Ghastly Panic.ttf'
+        pyglet.font.add_file(str(self.fontpath))
+        self.scary_font = pyglet.font.load("Ghastly Panic").name  #pozdrawiam kubę
+
+        self.spider_image1 = tk.PhotoImage(file="images/spider_1-removebg-preview.png")
+        self.spider_image2 = tk.PhotoImage(file="images/spider_2-removebg-preview.png")
+        self.water_blob_image1 = tk.PhotoImage(file="images/blob_2-removebg-preview.png")
+        self.water_blob_image2 = tk.PhotoImage(file="images/blob_1-removebg-preview.png")
+        self.bimbo_bear_image1 = tk.PhotoImage(file="images/bimbo_2-removebg-preview.png")
+        self.bimbo_bear_image2 = tk.PhotoImage(file="images/bimbo_1-removebg-preview.png")
+        self.talking_dog_image1 = tk.PhotoImage(file="images/dog_1-removebg-preview.png")
+        self.talking_dog_image2 = tk.PhotoImage(file="images/dog_2-removebg-preview.png")
+        self.fish_boss_image1 = tk.PhotoImage(file="images/fish_1-removebg-preview.png")
+        self.fish_boss_image2 = tk.PhotoImage(file="images/fish_2-removebg-preview.png")
+
+        self.frames_maker()
+
+
+        self.show_frame('frameMenu')
+
+    #     endings
+    attack = False
+    mercy = False
+    ending = 'frameEndStory5B'
+
+    def frames_maker(self):
+        container = tk.Frame(self.root)
+        container.pack(fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        self.frames = {}
+
+        for frame in ('frameMenu', 'frameStart', 'frameMap', 'frameStartStory1', 'frameStartStory2', 'frameStartStory3', 'fight',
+                      'frameStartStory4', 'frameStartStory5', 'frameFight1', 'frameFight2',  'frameFight3',  'frameFight4',  'frameFight5',
+                      'frameEndStory1', 'frameEndStory2', 'frameEndStory3', 'frameEndStory4', 'frameEndStory5A', 'frameEndStory5B', 'frameEndStory5C', 'frameWin', 'frameLose', 'frameSpare'):
+            f = tk.Frame(container, bg="black")
+            f.grid(row=0, column=0, sticky="nsew")
+            self.frames[frame] = f
+
+        self.bStart = tk.Button(self.frames['frameMenu'], text="Play", command=lambda: self.show_temp_frame('frameStart', 'frameMap', 'bStart'))
+        self.bStart.place(relx=0.5, rely=0.5, anchor="center")
+
+        tk.Label(self.frames['frameMenu'], text="title", fg="white", bg="black", font=("Helvetica", 30),).place(relx=0.5, rely=0.25, anchor="center")
+
+        self.b1 = tk.Button(self.frames['frameMap'], image=self.img_skip, background="black", borderwidth=0, activebackground="black", command=lambda: self.show_temp_frame('frameStartStory1', 'frameFight1', 'b1'))
+        self.b1.place(relx=0.17, rely=0.5, anchor="center")
+
+        self.b2 = tk.Button(self.frames['frameMap'], image=self.img_skip, background="black", borderwidth=0, activebackground="black", command=lambda: self.show_temp_frame('frameStartStory2', 'frameFight2', 'b2'))
+        self.b2.place(relx=0.33, rely=0.25, anchor="center")
+
+        self.b3 = tk.Button(self.frames['frameMap'], text="Game 3", command=lambda: self.show_temp_frame('frameStartStory3', 'frameFight3', 'b3'))
+        self.b3.place(relx=0.50, rely=0.25, anchor="center")
+
+        self.b4 = tk.Button(self.frames['frameMap'], text="Game 6", command=lambda: self.show_temp_frame('frameStartStory4', 'frameFight4', 'b4'))
+        self.b4.place(relx=0.67, rely=0.5, anchor="center")
+
+        self.b5 = tk.Button(self.frames['frameMap'], text="Game 7", command=lambda: self.show_temp_frame('frameStartStory5', 'frameFight5', 'b5'))
+        self.b5.place(relx=0.83, rely=0.5, anchor="center")
+
+        # przekazuje wlsciwosci z game 2 i 3 do 4 i 5
+        self.b2d = tk.Button(self.frames['frameMap'], text="Game 4", command=lambda: self.show_temp_frame('frameStartStory2', 'frameFight2', 'b2d'))
+        self.b2d.place(relx=0.33, rely=0.75, anchor="center")
+
+        self.b3d = tk.Button(self.frames['frameMap'], text="Game 5", command=lambda: self.show_temp_frame('frameStartStory3', 'frameFight3', 'b3d'))
+        self.b3d.place(relx=0.50, rely=0.75, anchor="center")
+
+        self.story_texts = {
+            'frameStart': ("A wet feeling on your face wakes you up. It's rain. You look around. You don’t know where you are but everything looks like from a dream. It seems like you’re in the middle of a forest. You’re laying in moss but you don’t remember how you got here. Something blinking in the distance caught your attention. You come closer to it and it turns out it’s in a cave. Curiosity gets the better of you and you enter. "),
+            'frameStartStory1': ("Upon entering you notice a figure. It looks like a spider. Maybe it will tell you more? Intrigued, you come closer."),
+            'frameStartStory2': ("You land on ground and it's a miracle that you're alright. You look around. You're on a small Island. It's very warm and pleasent. Then you notice that you didn't get hurt because you fell on a weird watery blob."),
+            'frameStartStory3': ("Suddenly, (you don't know how), you're in school. A wave of memories floods you. Old anxiety and sweat on your hands returns. In front of you appeares that one popular girl who laughed at you. The way she's loudly chewing gum drives you crazy."),
+            'frameStartStory4': ('You want to move on to look for exit but there is a dog standing in front of you. "You smell like bones…"  it says (which surprises you). "Share them with me. I am H U N G R Y".'),
+            'frameStartStory5': ('There is emptiness, only a huge fish with legs. "I have been watching you all along. I am the one who shapes reality, your confusion pleases me. I am not letting you go."'),
+            'frameEndStory1': ("You decide to leave the cave, but where the forest used to be, there's nothing left. Not even ground. Then you fall."),
+            'frameEndStory2': ("A bird grabs you and takes you somewhere far away."),
+            'frameEndStory3': ("You hear a bell and you wake up in your bed. Phew thankfully it was just an alarm that you haven't turned off since high school. You check the clock but can't see clearly what time is it. It's probably because you're still sleepy. You go to the bathroom to wash your face. You look up at the mirror, but it isn't your face that you see. The staring person from the mirror strats coming out and subconsciously you know that it doesn't mean anything good. You grab the doorknob and run out of the bathroom straight into the hotel corridor. You run and run until you're out of breath. You look back expecting to see THAT THING, but corridor is empty. Phew it seems like you managed to escape. "),
+            'frameEndStory4': ("You move on, but the corridors don't end. You turn again and you see the same painting, the same plant on right and the same (qustionable) stain on the carpet, God only knows what it's from... You look up and an the end of the hallway you see your old, lost love. It's that person, the one you spent your wonderful vacations with. You feel disoriented and in a rush of adrenaline you start running desperately towards her, shouting her name, but she disapperes behind the door. You run up there and enter the room and..."),
+            'frameEndStory5A': ("zakonczneie dobre"),
+            'frameEndStory5B': ("zakonczenie srednie"),
+            'frameEndStory5C': ("zakonczenie zle"),
+            'frameWin': ("Go girl! You win"),
+            'frameLose': ("You died (cringe)"),
+            'frameSpare': ("nice")
+        }
+
+
+        self.story_labels = {}
+        for key in self.story_texts.keys():
+            if key != 'frameWin' and key != 'frameLose' and key !='frameSpare':
+                lbl = tk.Label(self.frames[key], text="", fg="white", bg="black", font=("Helvetica", 30), wraplength=1000)
+                lbl.place(x=0, y=0, relwidth=1, relheight=1)
+                self.story_labels[key] = lbl
+            else:
+                lbl = tk.Label(self.frames[key], text="", fg="red", bg="black", font=("Helvetica", 50), wraplength=1000)
+                lbl.place(x=0, y=0, relwidth=1, relheight=1)
+                self.story_labels[key] = lbl
+
+            def skip_button(game):
+                tk.Button(self.frames[key], image=self.img_skip, borderwidth=0, background='black',
+                          activebackground='black',
+                          command=lambda k=key: self.show_frame(game)).place(relx=0.87, rely=0.80)
+
+            match key:
+                case "frameStart":
+                    skip_button("frameMap")
+                case "frameStartStory1":
+                    game = "frameFight1"
+                    skip_button(game)
+                case "frameStartStory2":
+                    game = "frameFight2"
+                    skip_button(game)
+                case "frameStartStory3":
+                    game = "frameFight3"
+                    skip_button(game)
+                case "frameStartStory4":
+                    game = "frameFight4"
+                    skip_button(game)
+                case "frameStartStory5":
+                    game = "frameFight5"
+                    skip_button(game)
+                case "frameEndStory1":
+                    game = "frameMap"
+                    skip_button(game)
+                case "frameEndStory2":
+                    game = "frameMap"
+                    skip_button(game)
+                case "frameEndStory3":
+                    game = "frameMap"
+                    skip_button(game)
+                case "frameEndStory4":
+                    game = "frameMap"
+                    skip_button(game)
+                case "frameEndStory5":
+                    game = "frameMap"
+                    skip_button(game)
+
+
+    #
+    def switch(self, button_name):
+        match button_name:
+            case "bStart":
+                self.b2.config(state='disabled')
+                self.b2d.config(state='disabled')
+                self.b3.config(state='disabled')
+                self.b3d.config(state='disabled')
+                self.b4.config(state='disabled')
+                self.b5.config(state='disabled')
+            case "b1":
+                self.b2.config(state='normal')
+                self.b2d.config(state='normal')
+                self.b1.config(state='disabled')
+            case "b2":
+                self.b2.config(state='disabled')
+                self.b2d.config(state='disabled')
+                self.b3d.config(state='disabled')
+                self.b3.config(state='normal')
+            case "b2d":
+                self.b2.config(state='disabled')
+                self.b3.config(state='disabled')
+                self.b3d.config(state='normal')
+                self.b2d.config(state='disabled')
+            case "b3":
+                self.b3.config(state='disabled')
+                self.b4.config(state='normal')
+            case "b3d":
+                self.b3d.config(state='disabled')
+                self.b4.config(state='normal')
+            case "b4":
+                self.b4.config(state='disabled')
+                self.b5.config(state='normal')
+
+
+    def text_typer(self, label, text, i=0, delay=75):
+        if i == 0:
+            # Start muzyki gdy zaczynamy pisać tekst
+            if not self.chan_type.get_busy():
+                self.chan_type.play(self.sound_type, loops=-1, fade_ms=500)
+
+        if (i < len(text)):
+            label.config(text=label["text"] + text[i])
+            label.after(delay, self.text_typer, label, text, i + 1, delay)
+            return
+
+        else:
+            # Tekst napisany, zatrzymaj muzykę tutakj zmienic jak typic adnhfrnciuvcHELSP
+            #pygame.mixer.music.stop()
+            self.chan_type.fadeout(800)
+            return
+
+    def show_frame(self, name):
+        match name:
+            case "frameFight1":
+                self.fight_frame(enteties.spider, name, "frameEndStory1", self.spider_image1, self.spider_image2)
+                # self.fight_frame(enteties.fish_boss, name, "frameEndStory5", self.fish_boss_image1, self.fish_boss_image2)
+                #ma byc arg/funkcja w fightframe zeby po pwalce wyswietlila sie historia i potem menu
+            case "frameFight2":
+                self.fight_frame(enteties.water_blob, name, "frameEndStory2",self.water_blob_image1, self.water_blob_image2)
+            case "frameFight3":
+                self.fight_frame(enteties.bimbo_bear, name, "frameEndStory3",self.bimbo_bear_image1, self.bimbo_bear_image2)
+            case "frameFight4":
+                self.fight_frame(enteties.talking_dog, name, "frameEndStory4",self.talking_dog_image1, self.talking_dog_image2)
+            case "frameFight5":
+                self.fight_frame(enteties.fish_boss, name, "frameEndStory5",self.fish_boss_image1, self.fish_boss_image2)
+
+
+        if self.after_id:
+            self.root.after_cancel(self.after_id)
+            self.after_id = None
+
+        self.frames[name].tkraise()
+
+        # zatrzymaj muzykę jeśli przechodzisz z ramki z historią na inną ramkę
+        if self.chan_type.get_busy():
+            self.chan_type.fadeout(500)
+
+        if name in self.story_texts:
+            lbl = self.story_labels[name]
+            lbl.config(text="")  # czyścimy tekst przed pisaniem
+            self.text_typer(lbl, self.story_texts[name])
+
+    def calculate_display_time(self, text, delay=80, read_time=10):
+        time_to_type = (len(text) * delay) / 1000  # zamiana ms na s
+        return int((time_to_type + read_time) * 1000)  # zwracamy czas w ms dla after()
+
+    def show_temp_frame(self, temp_frame, return_frame, button_name=None):
+        self.switch(button_name)
+
+        self.show_frame(temp_frame)
+        text = self.story_texts.get(temp_frame, "")
+        delay = 80  # ms delay dla efektu pisania
+        total_time = self.calculate_display_time(text, delay=delay, read_time=2)  # 5 sekund na przeczytanie
+        if self.after_id:
+            self.root.after_cancel(self.after_id)
+        self.after_id = self.root.after(total_time, lambda: self.show_frame(return_frame))
+
+    def fight_frame(self, enemy: Enemy, start_frame, end_frame, photo1, photo2):
+
+        # labels
+        enemy_hp_bar = enemy.health_points
+        enemy_hp_label = tk.Label(self.frames[start_frame], text=f"HP {enemy_hp_bar}", bg="black", fg="white", font=(50))
+        enemy_hp_label.place(relx=0.50, rely=0.1, anchor="center")
+
+
+        player_hp_bar = enteties.player.health_points
+        player_hp_label = tk.Label(self.frames[start_frame], text=f"Your HP = {player_hp_bar}", bg="black", fg="white", font=(50))
+        player_hp_label.place(relx=0.50, rely=0.7, anchor="center")
+
+        com_label = tk.Label(self.frames[start_frame], text=" ", bg="black", fg="white", font=(50))
+        com_label.place(relx=0.50, rely=0.8, anchor="center")
+
+        stats_label = tk.Label(self.frames[start_frame], text= f"Your max hp = {enteties.player.max_health_points}\n"
+                                                               f"Your attack = {enteties.player.attack_points}\n"
+                                                               f"Your chance for sparing enemy = {enteties.player.mercy_chance}", bg="black", fg="white", font=(50))
+        stats_label.place(relx=1, rely= 0, anchor= "ne")
+
+        # photos
+
+        image_label = tk.Label(self.frames[start_frame], image=photo1, bg="black")
+        # image_label.image = photo
+        image_label.place(relx=0.50, rely=0.4, anchor="center")
+
+        self.current_frame = 0;
+
+        def animation(frame1, frame2):
+            if self.current_frame == 0:
+                image_label.config(image=frame2)
+                self.current_frame = 1
+            else:
+                image_label.config(image=frame1)
+                self.current_frame = 0
+            self.root.after(500, lambda: animation(frame1, frame2))
+
+        animation(photo1, photo2)
+        # functions
+        def player_enemy_fight():
+            player_hp_label.config(text=f"Your HP = {enteties.player.health_points}")
+            self.attack = True
+            enteties.player.attack_enemy(enemy)
+            enemy_hp_label.config(text=f"HP {enemy.health_points}")
+
+            if enemy.health_points <= 0:
+                print("Enemy defeated!")
+                enteties.player.inventory["egg"] = enteties.player.inventory["egg"] + 1
+                enteties.player.inventory["leaf"] = enteties.player.inventory["leaf"] + 5
+                enteties.player.inventory["feather"] = enteties.player.inventory["egg"] + 1
+                enteties.player.health_points = enteties.player.health_points + 25
+                enteties.player.max_health_points = enteties.player.max_health_points + 25
+                self.show_temp_frame("frameWin", end_frame)
+                return
+
+
+            com_label.config(text=f"Enemy attacked")
+            com_label.after(1000, lambda: com_label.config(text=""))
+            enemy.attack_player(enteties.player)
+            print(f"Player HP: {enteties.player.health_points}")
+            player_hp_label.config(text=f"Your HP = {enteties.player.health_points}")
+            if enteties.player.health_points <= 0:
+                for widget in self.frames[start_frame].winfo_children():
+                    widget.destroy()
+                You_died = tk.Label(self.frames[start_frame], text="You died (cringe)", bg="black", fg="red",
+                                    font=(self.scary_font, 50))
+                You_died.place(relx=0.50, rely=0.5, anchor="center")
+                enteties.player.reset()
+                #todo
+                #zamienic na show tem frame zeby podac historie mape
+                self.show_temp_frame("frameLose",  end_frame)
+                return
+
+        def player_spares_enemy():
+            spared = enemy.mercy_success(enteties.player)
+            self.mercy = True
+            if spared:
+                print("enemy spared")
+                enteties.player.inventory["egg"] = enteties.player.inventory["egg"] + 1
+                enteties.player.inventory["leaf"] = enteties.player.inventory["leaf"] + 5
+                enteties.player.inventory["feather"] = enteties.player.inventory["egg"] + 1
+                enteties.player.health_points = enteties.player.health_points + 25
+                enteties.player.max_health_points = enteties.player.max_health_points + 25
+                self.show_temp_frame("frameSpare", end_frame)
+                return
+            com_label.config(text=f"You failed to spare the enemy")
+            com_label.after(1000, lambda: com_label.config(text=""))
+            print("you failed")
+            com_label.config(text=f"Enemy attacked")
+            com_label.after(1000, lambda: com_label.config(text=""))
+            enemy.attack_player(enteties.player)
+            print(f"Player HP: {enteties.player.health_points}")
+
+            player_hp_label.config(text=f"Your HP = {enteties.player.health_points}")
+            if enteties.player.health_points <= 0:
+                for widget in self.frames[start_frame].winfo_children():
+                    widget.destroy()
+                You_died = tk.Label(self.frames[start_frame], text="You died (cringe)", bg="black", fg="red",
+                                    font=(self.scary_font, 50))
+                You_died.place(relx=0.50, rely=0.5, anchor="center")
+                enteties.player.reset()
+                self.show_temp_frame("frameLose",  end_frame)
+                return
+
+        def check_button(button, inventory_item):
+            if button.get():
+                if enteties.player.inventory[inventory_item] > 0:
+                    enteties.player.inventory[inventory_item] = enteties.player.inventory[inventory_item] - 1
+                    print(enteties.player.inventory[inventory_item])
+                    match inventory_item:
+                        case "egg":
+                            enteties.player.attack_points += 10
+                            print(enteties.player.attack_points)
+
+                        case "leaf":
+                            if enteties.player.health_points ==  enteties.player.max_health_points:
+                                com_label.config(text=f"You have max health")
+                                com_label.after(1000, lambda: com_label.config(text=""))
+                                enteties.player.inventory[inventory_item] = enteties.player.inventory[inventory_item] + 1
+                            else:
+                                enteties.player.health_points = enteties.player.max_health_points
+                                player_hp_label.config(text=f"Your HP = {enteties.player.health_points}")
+                                print(enteties.player.health_points)
+                        case "feather":
+                            enteties.player.mercy_chance += 1
+                            print(enteties.player.mercy_chance)
+                else:
+                    com_label.config(text=f"You can't use that item, you don't have it")
+                    com_label.after(1000, lambda: com_label.config(text=""))
+                    print("You can't use that item, you don't have it")
+
+
+        def inventory_clicked():
+            info = f"egg (increase your strength): " + str(enteties.player.inventory.get("egg")) + \
+                   f"\nleaf (heal yourself to max value): "+ str(enteties.player.inventory.get("leaf")) + \
+                   f"\nfeather (increase your sparing chance): "+ str(enteties.player.inventory.get("feather"))
+
+            info_label = tk.Label(self.frames[start_frame], text=info, bg="black", fg="white", font=(50))
+            def config_info():
+                info_label.config(text = f"egg (increase your strength): " + str(enteties.player.inventory.get("egg")) + \
+                   f"\nleaf (heal yourself to max value): "+ str(enteties.player.inventory.get("leaf")) + \
+                   f"\nfeather (increase your sparing chance): "+ str(enteties.player.inventory.get("feather"))
+            )
+
+            def view_info():
+                info_label.place(relx=0.0,rely=0.0)
+
+            fight_button.place_forget()
+            mercy_button.place_forget()
+            inventory_button.place_forget()
+
+            EggCheckbutton = tk.IntVar()
+            LeafCheckbutton = tk.IntVar()
+            FeatherCheckbutton = tk.IntVar()
+
+            EggButton = tk.Checkbutton(self.frames[start_frame], text="           Egg          ", variable=EggCheckbutton,
+                                       bg="black",
+                                       fg="white", font=(self.scary_font, 30),
+                                       command=lambda: (check_button(EggCheckbutton, "egg"),config_info()))
+
+            EggButton.place(relx=0.20,rely=0.9,anchor="center")
+            LeafButton = tk.Checkbutton(self.frames[start_frame], text="           Leaf          ",
+                                        variable=LeafCheckbutton,
+                                        bg="black",
+                                        fg="white", font=(self.scary_font, 30),
+                                        command=lambda: (check_button(LeafCheckbutton, "leaf"),config_info()))
+            LeafButton.place(relx=0.40,rely=0.9,anchor="center")
+            FeatherButton = tk.Checkbutton(self.frames[start_frame], text="         Feather        ",
+                                           variable=FeatherCheckbutton,
+                                           bg="black",
+                                           fg="white", font=(self.scary_font, 30),
+                                           command=lambda: (check_button(FeatherCheckbutton, "feather"),config_info()))
+            FeatherButton.place(relx=0.60,rely=0.9,anchor="center")
+
+            info_button = tk.Button(self.frames[start_frame], text="  ?  ", activebackground="red",
+                                    bg="black",
+                                    fg="white",font=(self.scary_font, 30), command=lambda: view_info())
+            info_button.place(relx=0.9,rely=0.9,anchor="center")
+
+            exit_button = tk.Button(self.frames[start_frame], text="           Exit          ", activebackground="red",
+                                    bg="black",
+                                    fg="white", command=lambda: exit_inventory())
+            exit_button.config(font=(self.scary_font, 30))
+            exit_button.place(relx=0.80,rely=0.9,anchor="center")
+
+            def exit_inventory():
+                EggButton.destroy()
+                LeafButton.destroy()
+                FeatherButton.destroy()
+                exit_button.destroy()
+                info_button.destroy()
+                info_label.place_forget()
+
+                fight_button.place(relx=0.25,rely=0.9,anchor="center")
+                mercy_button.place(relx=0.50,rely=0.9,anchor="center")
+                inventory_button.place(relx=0.75,rely=0.9,anchor="center")
+
+        # main buttons
+        fight_button = tk.Button(self.frames[start_frame], text="           Fight          ", activebackground="red",
+                                 bg="black",
+                                 fg="white", command=lambda: player_enemy_fight())
+        fight_button.config(font=(self.scary_font, 30))
+        mercy_button = tk.Button(self.frames[start_frame], text="           Spare          ", activebackground="red",
+                                 bg="black",
+                                 fg="white", command=lambda: player_spares_enemy())
+        mercy_button.config(font=(self.scary_font, 30))
+        inventory_button = tk.Button(self.frames[start_frame], text="         Inventory       ", activebackground="red",
+                                     bg="black",
+                                     fg="white", command=lambda: inventory_clicked())
+        inventory_button.config(font=(self.scary_font, 30))
+
+        fight_button.place(relx=0.25,rely=0.9,anchor="center")
+        mercy_button.place(relx=0.50,rely=0.9,anchor="center")
+        inventory_button.place(relx=0.75,rely=0.9,anchor="center")
+
+
+
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = PpyMareGame(root)
+    root.mainloop()
