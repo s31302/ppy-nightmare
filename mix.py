@@ -4,6 +4,7 @@ from pathlib import Path
 import pyglet as pyglet
 import tkinter as tk
 import pygame as pygame
+from time import sleep
 
 class PpyMareGame:
     def __init__(self, root):
@@ -14,6 +15,15 @@ class PpyMareGame:
 
         self.sound_bg = pygame.mixer.Sound('sounds/C418 - Wet Hands - Minecraft Volume Alpha.mp3')
         self.sound_type = pygame.mixer.Sound('sounds/typing-sound-effect.mp3')  # podaj ścieżkę do muzyki
+        self.spider_sound = pygame.mixer.Sound('sounds/Pokemon Black & White Music_ Driftveil City Music.mp3')
+        self.water_blob_sound = pygame.mixer.Sound('sounds/The Trapper.mp3')
+        self.bimbo_sound = pygame.mixer.Sound('sounds/You Have to Cut the Dope (mp3cut.net).mp3')
+        self.dog_sound = pygame.mixer.Sound('sounds/In Game (From Granny).mp3')
+        self.fish_sound = pygame.mixer.Sound('sounds/Remnants in Dreams (mp3cut.net).mp3')
+        self.mix_ending_sound = pygame.mixer.Sound('sounds/Bleach Ost Soundscape to ardor (Morning Remembrance) [AMV].mp3')
+        self.bad_ending_sound = pygame.mixer.Sound('sounds/Little Nightmares II End of the Hall.mp3')
+        self.good_ending_sound = pygame.mixer.Sound('sounds/Welcome to Moominvalley.mp3')
+        self.death_sound = pygame.mixer.Sound('sounds/Hades - Death and I (mp3cut.net).mp3')
 
         self.frames = None
         self.root = root
@@ -26,12 +36,16 @@ class PpyMareGame:
         self.chan_bg.play(self.sound_bg, loops=-1)
         self.chan_bg.set_volume(0.3)
 
+        self.typing_after_id = None
+
+        self.ending = ""
+
         #assety zosi
         pyglet.options['win32_gdi_font'] = True
         self.fontpath = Path(__file__).parent / 'assets/Ghastly Panic.ttf'
         pyglet.font.add_file(str(self.fontpath))
         self.scary_font = pyglet.font.load("Ghastly Panic").name  #pozdrawiam kubę
-
+        # pozdrawiam roksanę
         self.spider_image1 = tk.PhotoImage(file="images/spider_1-removebg-preview.png")
         self.spider_image2 = tk.PhotoImage(file="images/spider_2-removebg-preview.png")
         self.water_blob_image1 = tk.PhotoImage(file="images/blob_2-removebg-preview.png")
@@ -63,7 +77,7 @@ class PpyMareGame:
 
         for frame in ('frameMenu', 'frameStart', 'frameMap', 'frameStartStory1', 'frameStartStory2', 'frameStartStory3', 'fight',
                       'frameStartStory4', 'frameStartStory5', 'frameFight1', 'frameFight2',  'frameFight3',  'frameFight4',  'frameFight5',
-                      'frameEndStory1', 'frameEndStory2', 'frameEndStory3', 'frameEndStory4', 'frameEndStory5A', 'frameEndStory5B', 'frameEndStory5C', 'frameWin', 'frameLose', 'frameSpare'):
+                      'frameEndStory1', 'frameEndStory2', 'frameEndStory3', 'frameEndStory4', 'mixed_ending', 'bad_ending', 'good_ending', 'frameWin', 'frameLose', 'frameSpare'):
             f = tk.Frame(container, bg="black")
             f.grid(row=0, column=0, sticky="nsew")
             self.frames[frame] = f
@@ -106,9 +120,9 @@ class PpyMareGame:
             'frameEndStory2': ("A bird grabs you and takes you somewhere far away."),
             'frameEndStory3': ("You hear a bell and you wake up in your bed. Phew thankfully it was just an alarm that you haven't turned off since high school. You check the clock but can't see clearly what time is it. It's probably because you're still sleepy. You go to the bathroom to wash your face. You look up at the mirror, but it isn't your face that you see. The staring person from the mirror strats coming out and subconsciously you know that it doesn't mean anything good. You grab the doorknob and run out of the bathroom straight into the hotel corridor. You run and run until you're out of breath. You look back expecting to see THAT THING, but corridor is empty. Phew it seems like you managed to escape. "),
             'frameEndStory4': ("You move on, but the corridors don't end. You turn again and you see the same painting, the same plant on right and the same (qustionable) stain on the carpet, God only knows what it's from... You look up and an the end of the hallway you see your old, lost love. It's that person, the one you spent your wonderful vacations with. You feel disoriented and in a rush of adrenaline you start running desperately towards her, shouting her name, but she disapperes behind the door. You run up there and enter the room and..."),
-            'frameEndStory5A': ("zakonczneie dobre"),
-            'frameEndStory5B': ("zakonczenie srednie"),
-            'frameEndStory5C': ("zakonczenie zle"),
+            'mixed_ending': ("Weird fish vanished. You decide to look for exit once more. You have to get out."),
+            'bad_ending': ("All of this is too much for you. You decide to get out. It doesn't matter who else you have to kill to leave this place."),
+            'good_ending': ("You wake up in your bed. That was a weird dream."),
             'frameWin': ("Go girl! You win"),
             'frameLose': ("You died (cringe)"),
             'frameSpare': ("nice")
@@ -165,7 +179,6 @@ class PpyMareGame:
                     game = "frameMap"
                     skip_button(game)
 
-
     #
     def switch(self, button_name):
         match button_name:
@@ -199,6 +212,18 @@ class PpyMareGame:
             case "b4":
                 self.b4.config(state='disabled')
                 self.b5.config(state='normal')
+            case "lose":
+                self.chan_bg.play(self.sound_bg, loops=-1)
+                self.b1.config(state='normal')
+                self.b2.config(state='disabled')
+                self.b2d.config(state='disabled')
+                self.b3.config(state='disabled')
+                self.b3d.config(state='disabled')
+                self.b4.config(state='disabled')
+                self.b5.config(state='disabled')
+
+
+
 
 
     def text_typer(self, label, text, i=0, delay=75):
@@ -208,9 +233,8 @@ class PpyMareGame:
                 self.chan_type.play(self.sound_type, loops=-1, fade_ms=500)
 
         if (i < len(text)):
-            label.config(text=label["text"] + text[i])
-            label.after(delay, self.text_typer, label, text, i + 1, delay)
-            return
+            label.config(text=text[:i+1])
+            self.typing_after_id = label.after(delay, self.text_typer, label, text, i + 1, delay)
 
         else:
             # Tekst napisany, zatrzymaj muzykę tutakj zmienic jak typic adnhfrnciuvcHELSP
@@ -218,20 +242,27 @@ class PpyMareGame:
             self.chan_type.fadeout(800)
             return
 
+    def start_text_typer(self, label, text, delay=75):
+        # Anuluj poprzedni efekt pisania, jeśli istnieje
+        if self.typing_after_id:
+            label.after_cancel(self.typing_after_id)
+            self.typing_after_id = None
+
+        label.config(text="")  # wyczyść tekst przed startem
+        self.text_typer(label, text, 0, delay)
+
     def show_frame(self, name):
         match name:
             case "frameFight1":
-                self.fight_frame(enteties.spider, name, "frameEndStory1", self.spider_image1, self.spider_image2)
-                # self.fight_frame(enteties.fish_boss, name, "frameEndStory5", self.fish_boss_image1, self.fish_boss_image2)
-                #ma byc arg/funkcja w fightframe zeby po pwalce wyswietlila sie historia i potem menu
+                self.fight_frame(enteties.spider, name, "frameEndStory1", self.spider_image1, self.spider_image2, self.spider_sound)
             case "frameFight2":
-                self.fight_frame(enteties.water_blob, name, "frameEndStory2",self.water_blob_image1, self.water_blob_image2)
+                self.fight_frame(enteties.water_blob, name, "frameEndStory2", self.water_blob_image1, self.water_blob_image2, self.water_blob_sound)
             case "frameFight3":
-                self.fight_frame(enteties.bimbo_bear, name, "frameEndStory3",self.bimbo_bear_image1, self.bimbo_bear_image2)
+                self.fight_frame(enteties.bimbo_bear, name, "frameEndStory3", self.bimbo_bear_image1, self.bimbo_bear_image2,self.bimbo_sound)
             case "frameFight4":
-                self.fight_frame(enteties.talking_dog, name, "frameEndStory4",self.talking_dog_image1, self.talking_dog_image2)
+                self.fight_frame(enteties.talking_dog, name, "frameEndStory4", self.talking_dog_image1, self.talking_dog_image2,self.dog_sound)
             case "frameFight5":
-                self.fight_frame(enteties.fish_boss, name, "frameEndStory5",self.fish_boss_image1, self.fish_boss_image2)
+                self.fight_frame(enteties.fish_boss, name, "frameEndStory5", self.fish_boss_image1, self.fish_boss_image2, self.fish_sound)
 
 
         if self.after_id:
@@ -246,8 +277,7 @@ class PpyMareGame:
 
         if name in self.story_texts:
             lbl = self.story_labels[name]
-            lbl.config(text="")  # czyścimy tekst przed pisaniem
-            self.text_typer(lbl, self.story_texts[name])
+            self.start_text_typer(lbl, self.story_texts[name])
 
     def calculate_display_time(self, text, delay=80, read_time=10):
         time_to_type = (len(text) * delay) / 1000  # zamiana ms na s
@@ -264,7 +294,9 @@ class PpyMareGame:
             self.root.after_cancel(self.after_id)
         self.after_id = self.root.after(total_time, lambda: self.show_frame(return_frame))
 
-    def fight_frame(self, enemy: Enemy, start_frame, end_frame, photo1, photo2):
+
+    def fight_frame(self, enemy: Enemy, start_frame, end_frame, photo1, photo2, music):
+        self.chan_bg.play(music, loops=-1)
 
         # labels
         enemy_hp_bar = enemy.health_points
@@ -287,7 +319,6 @@ class PpyMareGame:
         # photos
 
         image_label = tk.Label(self.frames[start_frame], image=photo1, bg="black")
-        # image_label.image = photo
         image_label.place(relx=0.50, rely=0.4, anchor="center")
 
         self.current_frame = 0;
@@ -302,21 +333,29 @@ class PpyMareGame:
             self.root.after(500, lambda: animation(frame1, frame2))
 
         animation(photo1, photo2)
+
+        # tmp
+
+
         # functions
         def player_enemy_fight():
-            player_hp_label.config(text=f"Your HP = {enteties.player.health_points}")
-            self.attack = True
-            enteties.player.attack_enemy(enemy)
-            enemy_hp_label.config(text=f"HP {enemy.health_points}")
 
-            if enemy.health_points <= 0:
+            player_hp_label.config(text=f"Your HP = {enteties.player.health_points}")
+
+            enteties.player.attack_enemy(enemy)
+            enemy_hp_label.config(text=f"HP {enemy.enemy_tmp_health}")
+
+            if enemy.enemy_tmp_health <= 0:
                 print("Enemy defeated!")
                 enteties.player.inventory["egg"] = enteties.player.inventory["egg"] + 1
                 enteties.player.inventory["leaf"] = enteties.player.inventory["leaf"] + 5
-                enteties.player.inventory["feather"] = enteties.player.inventory["egg"] + 1
+                enteties.player.inventory["feather"] = enteties.player.inventory["feather"] + 1
                 enteties.player.health_points = enteties.player.health_points + 25
                 enteties.player.max_health_points = enteties.player.max_health_points + 25
+                self.attack = True
+                self.chan_bg.play(self.sound_bg, loops=-1)
                 self.show_temp_frame("frameWin", end_frame)
+                enemy.enemy_reset()
                 return
 
 
@@ -326,28 +365,26 @@ class PpyMareGame:
             print(f"Player HP: {enteties.player.health_points}")
             player_hp_label.config(text=f"Your HP = {enteties.player.health_points}")
             if enteties.player.health_points <= 0:
-                for widget in self.frames[start_frame].winfo_children():
-                    widget.destroy()
-                You_died = tk.Label(self.frames[start_frame], text="You died (cringe)", bg="black", fg="red",
-                                    font=(self.scary_font, 50))
-                You_died.place(relx=0.50, rely=0.5, anchor="center")
+                self.show_temp_frame("frameLose",  "frameMenu", "lose")
+                self.chan_bg.play(self.death_sound)
+                enemy.enemy_reset()
                 enteties.player.reset()
-                #todo
-                #zamienic na show tem frame zeby podac historie mape
-                self.show_temp_frame("frameLose",  end_frame)
                 return
 
         def player_spares_enemy():
             spared = enemy.mercy_success(enteties.player)
-            self.mercy = True
+
             if spared:
                 print("enemy spared")
                 enteties.player.inventory["egg"] = enteties.player.inventory["egg"] + 1
                 enteties.player.inventory["leaf"] = enteties.player.inventory["leaf"] + 5
-                enteties.player.inventory["feather"] = enteties.player.inventory["egg"] + 1
+                enteties.player.inventory["feather"] = enteties.player.inventory["feather"] + 1
                 enteties.player.health_points = enteties.player.health_points + 25
                 enteties.player.max_health_points = enteties.player.max_health_points + 25
+                self.mercy = True
+                self.chan_bg.play(self.sound_bg, loops=-1)
                 self.show_temp_frame("frameSpare", end_frame)
+                enemy.enemy_reset()
                 return
             com_label.config(text=f"You failed to spare the enemy")
             com_label.after(1000, lambda: com_label.config(text=""))
@@ -359,13 +396,10 @@ class PpyMareGame:
 
             player_hp_label.config(text=f"Your HP = {enteties.player.health_points}")
             if enteties.player.health_points <= 0:
-                for widget in self.frames[start_frame].winfo_children():
-                    widget.destroy()
-                You_died = tk.Label(self.frames[start_frame], text="You died (cringe)", bg="black", fg="red",
-                                    font=(self.scary_font, 50))
-                You_died.place(relx=0.50, rely=0.5, anchor="center")
+                self.show_temp_frame("frameLose",  "frameMenu", "lose")
+                self.chan_bg.play(self.death_sound)
                 enteties.player.reset()
-                self.show_temp_frame("frameLose",  end_frame)
+                enemy.enemy_reset()
                 return
 
         def check_button(button, inventory_item):
@@ -408,6 +442,11 @@ class PpyMareGame:
                    f"\nfeather (increase your sparing chance): "+ str(enteties.player.inventory.get("feather"))
             )
 
+            def config_stats():
+                stats_label.config(text=f"Your max hp = {enteties.player.max_health_points}\n"
+                                        f"Your attack = {enteties.player.attack_points}\n"
+                                        f"Your chance for sparing enemy = {enteties.player.mercy_chance}")
+
             def view_info():
                 info_label.place(relx=0.0,rely=0.0)
 
@@ -422,20 +461,20 @@ class PpyMareGame:
             EggButton = tk.Checkbutton(self.frames[start_frame], text="           Egg          ", variable=EggCheckbutton,
                                        bg="black",
                                        fg="white", font=(self.scary_font, 30),
-                                       command=lambda: (check_button(EggCheckbutton, "egg"),config_info()))
+                                       command=lambda: (check_button(EggCheckbutton, "egg"),config_info(),config_stats()))
 
             EggButton.place(relx=0.20,rely=0.9,anchor="center")
             LeafButton = tk.Checkbutton(self.frames[start_frame], text="           Leaf          ",
                                         variable=LeafCheckbutton,
                                         bg="black",
                                         fg="white", font=(self.scary_font, 30),
-                                        command=lambda: (check_button(LeafCheckbutton, "leaf"),config_info()))
+                                        command=lambda: (check_button(LeafCheckbutton, "leaf"),config_info(),config_stats()))
             LeafButton.place(relx=0.40,rely=0.9,anchor="center")
             FeatherButton = tk.Checkbutton(self.frames[start_frame], text="         Feather        ",
                                            variable=FeatherCheckbutton,
                                            bg="black",
                                            fg="white", font=(self.scary_font, 30),
-                                           command=lambda: (check_button(FeatherCheckbutton, "feather"),config_info()))
+                                           command=lambda: (check_button(FeatherCheckbutton, "feather"),config_info(),config_stats()))
             FeatherButton.place(relx=0.60,rely=0.9,anchor="center")
 
             info_button = tk.Button(self.frames[start_frame], text="  ?  ", activebackground="red",
@@ -450,16 +489,16 @@ class PpyMareGame:
             exit_button.place(relx=0.80,rely=0.9,anchor="center")
 
             def exit_inventory():
-                EggButton.destroy()
-                LeafButton.destroy()
-                FeatherButton.destroy()
-                exit_button.destroy()
-                info_button.destroy()
+                EggButton.place_forget()
+                LeafButton.place_forget()
+                FeatherButton.place_forget()
+                exit_button.place_forget()
+                info_button.place_forget()
                 info_label.place_forget()
 
-                fight_button.place(relx=0.25,rely=0.9,anchor="center")
-                mercy_button.place(relx=0.50,rely=0.9,anchor="center")
-                inventory_button.place(relx=0.75,rely=0.9,anchor="center")
+                fight_button.place(relx=0.25, rely=0.9, anchor="center")
+                mercy_button.place(relx=0.50, rely=0.9, anchor="center")
+                inventory_button.place(relx=0.75, rely=0.9, anchor="center")
 
         # main buttons
         fight_button = tk.Button(self.frames[start_frame], text="           Fight          ", activebackground="red",
@@ -475,11 +514,24 @@ class PpyMareGame:
                                      fg="white", command=lambda: inventory_clicked())
         inventory_button.config(font=(self.scary_font, 30))
 
-        fight_button.place(relx=0.25,rely=0.9,anchor="center")
-        mercy_button.place(relx=0.50,rely=0.9,anchor="center")
-        inventory_button.place(relx=0.75,rely=0.9,anchor="center")
+        fight_button.place(relx=0.25, rely=0.9, anchor="center")
+        mercy_button.place(relx=0.50, rely=0.9, anchor="center")
+        inventory_button.place(relx=0.75, rely=0.9, anchor="center")
+
+        if(start_frame == "frameFight5"):
+            end_frame = self.which_ending()
 
 
+    def which_ending(self):
+        if self.attack:
+            if self.mercy:
+                self.ending = "mixed_ending"
+            else:
+                self.ending = "bad_ending"
+        else:
+            self.ending = "good_ending"
+
+        return self.ending
 
 
 

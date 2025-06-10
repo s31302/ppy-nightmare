@@ -9,7 +9,7 @@ class Player:
     #     egg - moc, leaf - leczenie, feather - mercy
 
     def attack_enemy(self, enemy):
-        enemy.health_points -= self.attack_points
+        enemy.enemy_tmp_health -= self.attack_points
     def reset(self):
         self.max_health_points = 50
         self.health_points = self.max_health_points
