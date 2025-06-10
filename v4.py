@@ -31,7 +31,7 @@ class PpyMareGame:
         self.root.title("PpyMare")
         self.after_id = None
         #dodaje fote
-        self.img_skip = tk.PhotoImage(file='images/skip2.png')
+        self.img_skip = tk.PhotoImage(file='images/skip.png')
         # dodaje fote
         self.img_play = tk.PhotoImage(file='images/play.png')
         self.img_title = tk.PhotoImage(file='images/title.png')
@@ -154,7 +154,7 @@ class PpyMareGame:
             def skip_button(game):
                 tk.Button(self.frames[key], image=self.img_skip, borderwidth=0, background='black',
                           activebackground='black',
-                          command=lambda k=key: self.show_frame(game)).place(relx=0.87, rely=0.80)
+                          command=lambda k=key: self.show_frame(game)).place(relx=0.85, rely=0.80)
 
             match key:
                 case "frameStart":
