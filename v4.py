@@ -1,5 +1,5 @@
-from src.Enemy import Enemy
-from src import enteties as enteties
+from Enemy import Enemy
+import enteties as enteties
 from pathlib import Path
 import pyglet as pyglet
 import tkinter as tk
