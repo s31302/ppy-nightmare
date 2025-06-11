@@ -17,3 +17,4 @@ class Player:
         self.attack_points = 10
         self.mercy_chance = 0
         self.inventory = {"egg": 0, "leaf": 5, "feather": 0}
+    # jest 2 w nocy a ja piszę dokumentacje
