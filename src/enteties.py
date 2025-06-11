@@ -1,6 +1,6 @@
+# here we create player and enemies with correct values
 
-
-from Enemy import Enemy
+from src.Enemy import Enemy
 from Player import Player
 
 player = Player(10,0,50)
